@@ -154,7 +154,7 @@ func TestAccDockerRegistryImageResource_pushMissingImage(t *testing.T) {
 	})
 }
 
-func testDockerRegistryImageNotInRegistry(pushOpts internalPushImageOptions) resource.TestCheckFunc {
+func testDockerRegistryImageNotInRegistry(pushOpts internalImageOptions) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		providerConfig := testAccProvider.Meta().(*ProviderConfig)
 		username, password := getDockerRegistryImageRegistryUserNameAndPassword(pushOpts, providerConfig)
@@ -166,7 +166,7 @@ func testDockerRegistryImageNotInRegistry(pushOpts internalPushImageOptions) res
 	}
 }
 
-func testDockerRegistryImageInRegistry(pushOpts internalPushImageOptions, cleanup bool) resource.TestCheckFunc {
+func testDockerRegistryImageInRegistry(pushOpts internalImageOptions, cleanup bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		providerConfig := testAccProvider.Meta().(*ProviderConfig)
 		username, password := getDockerRegistryImageRegistryUserNameAndPassword(pushOpts, providerConfig)

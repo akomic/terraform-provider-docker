@@ -27,6 +27,16 @@ func resourceDockerImage() *schema.Resource {
 				Optional: true,
 			},
 
+			"push_remote": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
+			"force_build": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+
 			"pull_trigger": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -43,12 +53,19 @@ func resourceDockerImage() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"output": {
+			"pull_output": {
 				Type:     schema.TypeString,
 				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+			},
+
+			"push_output": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"build_output": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 
 			"build": {

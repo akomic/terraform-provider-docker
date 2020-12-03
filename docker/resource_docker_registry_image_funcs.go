@@ -27,15 +27,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-type internalPushImageOptions struct {
-	Name               string
-	FqName             string
-	Registry           string
-	NormalizedRegistry string
-	Repository         string
-	Tag                string
-}
-
 func createImageBuildOptions(buildOptions map[string]interface{}) types.ImageBuildOptions {
 
 	mapOfInterfacesToMapOfStrings := func(mapOfInterfaces map[string]interface{}) map[string]string {
@@ -271,7 +262,7 @@ func getDockerImageContextTarHash(dockerContextTarPath string) (string, error) {
 	return contextHash, nil
 }
 
-func pushDockerRegistryImage(client *client.Client, pushOpts internalPushImageOptions, username string, password string) error {
+func pushDockerRegistryImage(client *client.Client, pushOpts internalImageOptions, username string, password string) error {
 	pushOptions := types.ImagePushOptions{}
 	if username != "" {
 		auth := types.AuthConfig{Username: username, Password: password}
@@ -309,7 +300,7 @@ func pushDockerRegistryImage(client *client.Client, pushOpts internalPushImageOp
 }
 
 func getDockerRegistryImageRegistryUserNameAndPassword(
-	pushOpts internalPushImageOptions,
+	pushOpts internalImageOptions,
 	providerConfig *ProviderConfig) (string, string) {
 	registry := pushOpts.NormalizedRegistry
 	username := ""
@@ -321,7 +312,7 @@ func getDockerRegistryImageRegistryUserNameAndPassword(
 	return username, password
 }
 
-func deleteDockerRegistryImage(pushOpts internalPushImageOptions, sha256Digest, username, password string, fallback bool) error {
+func deleteDockerRegistryImage(pushOpts internalImageOptions, sha256Digest, username, password string, fallback bool) error {
 	client := http.DefaultClient
 
 	// Allow insecure registries only for ACC tests
@@ -346,12 +337,8 @@ func deleteDockerRegistryImage(pushOpts internalPushImageOptions, sha256Digest, 
 		req.SetBasicAuth(username, password)
 	}
 
-	// We accept schema v2 manifests and manifest lists, and also OCI types
-	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.list.v2+json")
-	req.Header.Add("Accept", "application/vnd.oci.image.manifest.v1+json")
-	req.Header.Add("Accept", "application/vnd.oci.image.index.v1+json")
-
+	// Set this header so that we get the v2 manifest back from the registry.
+	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 	if fallback {
 		// Fallback to this header if the registry does not support the v2 manifest like gcr.io
 		req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v1+prettyjws")
@@ -425,7 +412,7 @@ func deleteDockerRegistryImage(pushOpts internalPushImageOptions, sha256Digest, 
 	}
 }
 
-func getImageDigestWithFallback(opts internalPushImageOptions, username, password string) (string, error) {
+func getImageDigestWithFallback(opts internalImageOptions, username, password string) (string, error) {
 	digest, err := getImageDigest(opts.Registry, opts.Repository, opts.Tag, username, password, false)
 	if err != nil {
 		digest, err = getImageDigest(opts.Registry, opts.Repository, opts.Tag, username, password, true)
@@ -436,14 +423,14 @@ func getImageDigestWithFallback(opts internalPushImageOptions, username, passwor
 	return digest, nil
 }
 
-func createPushImageOptions(image string) internalPushImageOptions {
+func createPushImageOptions(image string) internalImageOptions {
 	pullOpts := parseImageOptions(image)
 	if pullOpts.Registry == "" {
 		pullOpts.Registry = "registry.hub.docker.com"
 	} else {
 		pullOpts.Repository = strings.Replace(pullOpts.Repository, pullOpts.Registry+"/", "", 1)
 	}
-	pushOpts := internalPushImageOptions{
+	pushOpts := internalImageOptions{
 		Name:               image,
 		Registry:           pullOpts.Registry,
 		NormalizedRegistry: normalizeRegistryAddress(pullOpts.Registry),
